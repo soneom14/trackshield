@@ -1,133 +1,83 @@
 const express = require("express");
-const cors = require("cors");
 const mongoose = require("mongoose");
-
 const app = express();
-const PORT = 5000;
 
-app.use(cors());
-app.use(express.json());
+// PORT (important for Render)
+const PORT = process.env.PORT || 5000;
 
-// 🔥 CONNECT MONGODB
-mongoose.connect(process.env.MONGO_URI)
+// MongoDB Connection
+mongoose
+    .connect(process.env.MONGO_URI)
     .then(() => console.log("MongoDB Connected"))
-    .catch(err => console.log(err));
+    .catch((err) => console.log(err));
 
-// 🔥 USER SCHEMA
-const userSchema = new mongoose.Schema({
-    bandId: String,
-    parentName: String,
-    childName: String,
-    phone: String,
-    address: String,
-    location: {
-        lat: Number,
-        lng: Number
-    }
+// Schema
+const locationSchema = new mongoose.Schema({
+    deviceId: String,
+    latitude: String,
+    longitude: String,
+    updatedAt: Date,
 });
 
-const User = mongoose.model("User", userSchema);
+const Location = mongoose.model("Location", locationSchema);
 
-// HOME
+// HOME ROUTE
 app.get("/", (req, res) => {
     res.send("TrackShield Backend Running with DB 🚀");
 });
 
-// 🔥 REGISTER USER
-app.post("/register", async (req, res) => {
+// ✅ UPDATE ROUTE (SEND DATA)
+app.get("/update/:id", async (req, res) => {
     try {
-        const { parentName, childName, phone, address } = req.body;
+        const { id } = req.params;
+        const { lat, lon } = req.query;
 
-        if (!parentName || !childName || !phone || !address) {
-            return res.status(400).json({ message: "All fields required" });
+        if (!lat || !lon) {
+            return res.send("Missing lat or lon");
         }
 
-        // Phone validation
-        const phoneRegex = /^[0-9]{10}$/;
-        if (!phoneRegex.test(phone)) {
-            return res.status(400).json({ message: "Phone must be 10 digits" });
-        }
+        await Location.findOneAndUpdate(
+            { deviceId: id },
+            {
+                deviceId: id,
+                latitude: lat,
+                longitude: lon,
+                updatedAt: new Date(),
+            },
+            { upsert: true, new: true }
+        );
 
-        const bandId = "TS-" + Math.floor(1000 + Math.random() * 9000);
-
-        const newUser = new User({
-            bandId,
-            parentName,
-            childName,
-            phone,
-            address
-        });
-
-        await newUser.save();
-
-        res.json({
-            message: "User saved in DB",
-            user: newUser
-        });
-
+        res.send("Location updated successfully");
     } catch (err) {
-        res.status(500).json({ message: "Server error" });
+        console.error(err);
+        res.send("Error updating location");
     }
 });
 
-// 🔥 GET USERS (FROM DB)
-app.get("/users", async (req, res) => {
+// ✅ TRACK ROUTE (GET DATA)
+app.get("/track/:id", async (req, res) => {
     try {
-        const users = await User.find();
-        res.json(users);
-    } catch {
-        res.status(500).json({ message: "Error fetching users" });
-    }
-});
+        const { id } = req.params;
 
-// 🔥 UPDATE LOCATION (Arduino)
-app.post("/location", async (req, res) => {
-    const { bandId, lat, lng } = req.body;
+        const data = await Location.findOne({ deviceId: id });
 
-    try {
-        const user = await User.findOne({ bandId });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        user.location = { lat, lng };
-        await user.save();
-
-        res.json({ message: "Location updated" });
-
-    } catch {
-        res.status(500).json({ message: "Error updating location" });
-    }
-});
-
-// 🔥 LIVE TRACK PAGE
-app.get("/track/:bandId", async (req, res) => {
-    const { bandId } = req.params;
-
-    try {
-        const user = await User.findOne({ bandId });
-
-        if (!user || !user.location) {
-            return res.send("<h2>Location not available yet</h2>");
+        if (!data) {
+            return res.send("Location not available yet");
         }
 
         res.send(`
-      <h2>TrackShield Live Location</h2>
-      <p><b>Band ID:</b> ${bandId}</p>
-      <p><b>Lat:</b> ${user.location.lat}</p>
-      <p><b>Lng:</b> ${user.location.lng}</p>
-      <a href="https://www.google.com/maps?q=${user.location.lat},${user.location.lng}" target="_blank">
-        Open in Google Maps
-      </a>
+      <h2>Device ID: ${id}</h2>
+      <p>Latitude: ${data.latitude}</p>
+      <p>Longitude: ${data.longitude}</p>
+      <p>Last Updated: ${data.updatedAt}</p>
     `);
-
-    } catch {
-        res.send("<h2>Error fetching location</h2>");
+    } catch (err) {
+        console.error(err);
+        res.send("Error fetching location");
     }
 });
 
-// START SERVER (NETWORK ACCESS ENABLED)
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+// START SERVER
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
