@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title>Child Safety Emergency Info</title>
+
+<style>
+
+body{
+font-family:'Segoe UI', Arial, sans-serif;
+background: linear-gradient(135deg,#1fa2ff,#12d8fa,#a6ffcb);
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.card{
+background: linear-gradient(145deg,#ffffff,#f0f4ff);
+width:420px;
+padding:30px;
+border-radius:20px;
+box-shadow:0 15px 40px rgba(0,0,0,0.25);
+text-align:center;
+}
+
+h2{
+color:#333;
+margin-bottom:20px;
+}
+
+h3{
+color:#444;
+margin-top:20px;
+}
+
+.contact{
+background: linear-gradient(135deg,#f5f7fa,#e4ecff);
+padding:15px;
+margin:12px 0;
+border-radius:12px;
+transition:0.3s;
+}
+
+.contact:hover{
+transform:scale(1.04);
+box-shadow:0 10px 20px rgba(0,0,0,0.1);
+}
+
+.phone{
+display:block;
+margin-top:8px;
+font-size:18px;
+font-weight:bold;
+color:#0059ff;
+text-decoration:none;
+}
+
+.phone:hover{
+color:#002a99;
+}
+
+#result{
+margin-top:15px;
+padding:18px;
+background: linear-gradient(135deg,#eef4ff,#dbe8ff);
+border-radius:12px;
+line-height:1.6;
+}
+
+#result a{
+display:block;
+margin:8px 0;
+color:#0066ff;
+font-weight:500;
+text-decoration:none;
+}
+
+#result a:hover{
+text-decoration:underline;
+}
+
+button{
+margin-top:15px;
+padding:12px 20px;
+border:none;
+border-radius:10px;
+background: linear-gradient(135deg,#ff416c,#ff4b2b);
+color:white;
+font-size:15px;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.06);
+box-shadow:0 8px 20px rgba(0,0,0,0.2);
+}
+
+hr{
+margin:25px 0;
+border:none;
+height:1px;
+background:#ddd;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Child Safety Emergency Info</h2>
+
+<div class="contact">
+<b>Primary Contact</b><br>
+Om Sone
+<a class="phone" href="tel:9028595962">📞 9028595962</a>
+</div>
+
+<div class="contact">
+<b>2nd Primary Contact</b><br>
+Isha Ladhe
+<a class="phone" href="tel:9011633804">📞 9011633804</a>
+</div>
+
+<hr>
+
+<h3>Live Location & Nearby Help</h3>
+
+<p id="result">Detecting location...</p>
+
+</div>
+
+<script>
+
+window.onload = function(){
+detectLocation();
+};
+
+function detectLocation(){
+
+if(navigator.geolocation){
+
+navigator.geolocation.getCurrentPosition(showPosition, showError);
+
+}else{
+
+document.getElementById("result").innerHTML =
+"Geolocation is not supported by this browser.";
+
+}
+
+}
+
+function showPosition(position){
+
+let lat = position.coords.latitude;
+let lon = position.coords.longitude;
+
+let mapEmbed =
+`<iframe
+width="100%"
+height="250"
+style="border:0;border-radius:10px;"
+loading="lazy"
+allowfullscreen
+src="https://maps.google.com/maps?q=${lat},${lon}&z=15&output=embed">
+</iframe>`;
+
+let mapLink =
+`https://www.google.com/maps?q=${lat},${lon}`;
+
+let policeSearch =
+`https://www.google.com/maps/search/police+station+near+me/@${lat},${lon},15z`;
+
+let mallSearch =
+`https://www.google.com/maps/search/mall+security+near+me/@${lat},${lon},15z`;
+
+document.getElementById("result").innerHTML =
+
+"<b>Child Live Location</b><br><br>" +
+
+mapEmbed +
+
+"<br><br><a target='_blank' href='"+mapLink+"'>Open Exact Location in Google Maps</a>" +
+
+"<br><br><a target='_blank' href='"+mallSearch+"'>Find Nearest Mall / Security</a>" +
+
+"<br><br><a target='_blank' href='"+policeSearch+"'>Find Nearest Police Station</a>" +
+
+"<br><br><button onclick='sendSOS("+lat+","+lon+")'>Send SOS to Parents</button>";
+
+}
+
+function showError(error){
+
+let message = "";
+
+switch(error.code){
+
+case error.PERMISSION_DENIED:
+message = "Location permission denied.";
+break;
+
+case error.POSITION_UNAVAILABLE:
+message = "Location information unavailable.";
+break;
+
+case error.TIMEOUT:
+message = "Location request timed out.";
+break;
+
+default:
+message = "Unknown error occurred.";
+
+}
+
+document.getElementById("result").innerHTML = message;
+
+}
+
+function sendSOS(lat,lon){
+
+let map = `https://maps.google.com/?q=${lat},${lon}`;
+
+let message =
+`EMERGENCY! Child location: ${map}`;
+
+window.location.href =
+`sms:9028595962,9011633804?body=${encodeURIComponent(message)}`;
+
+}
+
+</script>
+
+</body>
+
+</html>
