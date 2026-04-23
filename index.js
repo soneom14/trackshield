@@ -9,8 +9,8 @@ app.use(cors());
 app.use(express.json());
 
 // 🔥 CONNECT MONGODB
-mongoose.connect("mongodb://127.0.0.1:27017/trackshield")
-    .then(() => console.log("✅ MongoDB Connected"))
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("MongoDB Connected"))
     .catch(err => console.log(err));
 
 // 🔥 USER SCHEMA
